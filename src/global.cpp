@@ -2,6 +2,12 @@
 float glob_temperature = 25.0f;
 float glob_humidity = 55.0f;
 
+String WIFI_SSID;
+String WIFI_PASS;
+String CORE_IOT_TOKEN;
+String CORE_IOT_SERVER;
+String CORE_IOT_PORT;
+
 String ssid = "ESP32-YOUR NETWORK HERE!!!";
 String password = "12345678";
 String wifi_ssid = "abcde";

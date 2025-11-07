@@ -1,45 +1,42 @@
+#include <Wire.h>
 #include "temp_humi_monitor.h"
+#include <DHT20.h>
+
 DHT20 dht20;
-LiquidCrystal_I2C lcd(33,16,2);
 
-
+// Choose free pins on this board:
+#define I2C_SDA  2
+#define I2C_SCL  10
+// Add 4.7 kΩ pull-ups from SDA→3V3 and SCL→3V3 if your DHT20 breakout doesn’t already include them
+// DHT20 VCC → P5-6 (VDD33), GND → P5-7 (GND)
+// DHT20 SDA → GPIO2, SCL → GPIO10
 void temp_humi_monitor(void *pvParameters){
 
-    Wire.begin(11, 12);
-    Serial.begin(115200);
-    dht20.begin();
+  // Start I²C on GPIO2 (SDA) and GPIO10 (SCL)
+  Wire.begin(I2C_SDA, I2C_SCL);
 
-    while (1){
-        /* code */
-        
-        dht20.read();
-        // Reading temperature in Celsius
-        float temperature = dht20.getTemperature();
-        // Reading humidity
-        float humidity = dht20.getHumidity();
+  Serial.begin(115200);
+  dht20.begin();
 
-        
+  for(;;){
+    dht20.read();
+    float temperature = dht20.getTemperature();
+    float humidity    = dht20.getHumidity();
 
-        // Check if any reads failed and exit early
-        if (isnan(temperature) || isnan(humidity)) {
-            Serial.println("Failed to read from DHT sensor!");
-            temperature = humidity =  -1;
-            //return;
-        }
-
-        //Update global variables for temperature and humidity
-        glob_temperature = temperature;
-        glob_humidity = humidity;
-
-        // Print the results
-        
-        Serial.print("Humidity: ");
-        Serial.print(humidity);
-        Serial.print("%  Temperature: ");
-        Serial.print(temperature);
-        Serial.println("°C");
-        
-        vTaskDelay(5000);
+    // If read fails, send NaN so your UI can show "N/A"
+    if (isnan(temperature) || isnan(humidity)) {
+      Serial.println("Failed to read from DHT20!");
+      temperature = NAN;
+      humidity    = NAN;
     }
-    
+
+    glob_temperature = temperature;
+    glob_humidity    = humidity;
+
+    Serial.print("Humidity: ");   Serial.print(humidity);
+    Serial.print("%  Temperature: "); Serial.print(temperature);
+    Serial.println("°C");
+
+    vTaskDelay(pdMS_TO_TICKS(5000));
+  }
 }
