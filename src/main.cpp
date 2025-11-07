@@ -29,11 +29,26 @@
 //   xTaskCreate(relay_toggle_task, "Relay Toggle", 4096, NULL, 2, NULL);
 // }
 
+void checkBootKeys() {
+  pinMode(KEY1_GPIO, INPUT_PULLUP);
+  // sample for ~1s
+  uint32_t t0 = millis();
+  bool pressed = false;
+  while (millis() - t0 < 1000) {
+    if (digitalRead(KEY1_GPIO) == LOW) { pressed = true; break; }
+    delay(10);
+  }
+  if (pressed) {
+    Serial.println("KEY1 held at boot -> Enter AP Mode");
+    startAP();              // your AP function
+    // You might want to skip STA connect afterwards.
+  }
+}
+
 void setup() {
   Serial.begin(115200);
   delay(1000);
-
-
+  checkBootKeys();
 
   if (!LittleFS.begin(true)) {
     Serial.println("❌ LittleFS mount failed!");
@@ -51,6 +66,7 @@ void setup() {
   xTaskCreate(coreiot_task, "CoreIOT Task" ,4096 ,NULL ,2 , NULL);
   // xTaskCreate( tiny_ml_task, "Tiny ML Task" ,2048  ,NULL  ,2 , NULL);
   // xTaskCreate(relay_toggle_task, "Relay Toggle", 4096, NULL, 2, NULL);
+  xTaskCreate(relay_toggle_task, "Relay Toggle", 4096, NULL, 2, NULL);
 }
 
 
