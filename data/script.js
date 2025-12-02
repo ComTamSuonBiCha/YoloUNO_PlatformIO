@@ -2,6 +2,10 @@
 var gateway = `ws://${window.location.hostname}/ws`;
 var websocket;
 
+// LED States
+var led1State = false;
+var led2State = false;
+
 window.addEventListener('load', onLoad);
 
 function onLoad(event) {
@@ -39,7 +43,14 @@ function onMessage(event) {
     console.log("📩 Nhận:", event.data);
     try {
         var data = JSON.parse(event.data);
-        // Có thể thêm xử lý riêng nếu cần (ví dụ cập nhật trạng thái)
+        // Handle status updates from server if needed
+        if (data.page === "device") {
+            if (data.device === "LED1") {
+                updateLED1UI(data.status === "ON");
+            } else if (data.device === "LED2") {
+                updateLED2UI(data.status === "ON");
+            }
+        }
     } catch (e) {
         console.warn("Không phải JSON hợp lệ:", event.data);
     }
@@ -47,9 +58,6 @@ function onMessage(event) {
 
 
 // ==================== UI NAVIGATION ====================
-let relayList = [];
-let deleteTarget = null;
-
 function showSection(id, event) {
     document.querySelectorAll('.section').forEach(sec => sec.style.display = 'none');
     document.getElementById(id).style.display = id === 'settings' ? 'flex' : 'block';
@@ -93,70 +101,123 @@ window.onload = function () {
 };
 
 
-// ==================== DEVICE FUNCTIONS ====================
-function openAddRelayDialog() {
-    document.getElementById('addRelayDialog').style.display = 'flex';
-}
-function closeAddRelayDialog() {
-    document.getElementById('addRelayDialog').style.display = 'none';
-}
-function saveRelay() {
-    const name = document.getElementById('relayName').value.trim();
-    const gpio = document.getElementById('relayGPIO').value.trim();
-    if (!name || !gpio) return alert("⚠️ Please fill all fields!");
-    relayList.push({ id: Date.now(), name, gpio, state: false });
-    renderRelays();
-    closeAddRelayDialog();
-}
-function renderRelays() {
-    const container = document.getElementById('relayContainer');
-    container.innerHTML = "";
-    relayList.forEach(r => {
-        const card = document.createElement('div');
-        card.className = 'device-card';
-        card.innerHTML = `
-      <i class="fa-solid fa-bolt device-icon"></i>
-      <h3>${r.name}</h3>
-      <p>GPIO: ${r.gpio}</p>
-      <button class="toggle-btn ${r.state ? 'on' : ''}" onclick="toggleRelay(${r.id})">
-        ${r.state ? 'ON' : 'OFF'}
-      </button>
-      <i class="fa-solid fa-trash delete-icon" onclick="showDeleteDialog(${r.id})"></i>
-    `;
-        container.appendChild(card);
+// ==================== DEVICE CONTROL FUNCTIONS ====================
+function toggleLED1() {
+    led1State = !led1State;
+    updateLED1UI(led1State);
+    
+    const command = JSON.stringify({
+        page: "device",
+        device: "LED1",
+        gpio: 2,
+        status: led1State ? "ON" : "OFF"
     });
+    
+    Send_Data(command);
 }
-function toggleRelay(id) {
-    const relay = relayList.find(r => r.id === id);
-    if (relay) {
-        relay.state = !relay.state;
-        const relayJSON = JSON.stringify({
-            page: "device",
-            value: {
-                name: relay.name,
-                status: relay.state ? "ON" : "OFF",
-                gpio: relay.gpio
-            }
-        });
-        Send_Data(relayJSON);
-        renderRelays();
+
+function toggleLED2() {
+    led2State = !led2State;
+    updateLED2UI(led2State);
+    
+    const command = JSON.stringify({
+        page: "device",
+        device: "LED2",
+        gpio: 4,
+        status: led2State ? "ON" : "OFF"
+    });
+    
+    Send_Data(command);
+}
+
+function updateLED1UI(isOn) {
+    led1State = isOn;
+    const btn = document.getElementById('led1-btn');
+    const statusDot = document.querySelector('#led1-status .status-dot');
+    const statusText = document.querySelector('#led1-status .status-text');
+    
+    if (isOn) {
+        btn.classList.add('on');
+        btn.textContent = 'ON';
+        statusDot.classList.remove('off');
+        statusDot.classList.add('on');
+        statusText.textContent = 'Bật';
+    } else {
+        btn.classList.remove('on');
+        btn.textContent = 'OFF';
+        statusDot.classList.remove('on');
+        statusDot.classList.add('off');
+        statusText.textContent = 'Tắt';
     }
 }
-function showDeleteDialog(id) {
-    deleteTarget = id;
-    document.getElementById('confirmDeleteDialog').style.display = 'flex';
+
+function updateLED2UI(isOn) {
+    led2State = isOn;
+    const btn = document.getElementById('led2-btn');
+    const statusDot = document.querySelector('#led2-status .status-dot');
+    const statusText = document.querySelector('#led2-status .status-text');
+    
+    if (isOn) {
+        btn.classList.add('on');
+        btn.textContent = 'ON';
+        statusDot.classList.remove('off');
+        statusDot.classList.add('on');
+        statusText.textContent = 'Bật';
+    } else {
+        btn.classList.remove('on');
+        btn.textContent = 'OFF';
+        statusDot.classList.remove('on');
+        statusDot.classList.add('off');
+        statusText.textContent = 'Tắt';
+    }
 }
-function closeConfirmDelete() {
-    document.getElementById('confirmDeleteDialog').style.display = 'none';
+
+function turnAllOn() {
+    updateLED1UI(true);
+    updateLED2UI(true);
+    
+    const command1 = JSON.stringify({
+        page: "device",
+        device: "LED1",
+        gpio: 2,
+        status: "ON"
+    });
+    
+    const command2 = JSON.stringify({
+        page: "device",
+        device: "LED2",
+        gpio: 4,
+        status: "ON"
+    });
+    
+    Send_Data(command1);
+    setTimeout(() => Send_Data(command2), 100);
 }
-function confirmDelete() {
-    relayList = relayList.filter(r => r.id !== deleteTarget);
-    renderRelays();
-    closeConfirmDelete();
+
+function turnAllOff() {
+    updateLED1UI(false);
+    updateLED2UI(false);
+    
+    const command1 = JSON.stringify({
+        page: "device",
+        device: "LED1",
+        gpio: 2,
+        status: "OFF"
+    });
+    
+    const command2 = JSON.stringify({
+        page: "device",
+        device: "LED2",
+        gpio: 4,
+        status: "OFF"
+    });
+    
+    Send_Data(command1);
+    setTimeout(() => Send_Data(command2), 100);
 }
 
 
-// ==================== SETTINGS FORM (BỔ SUNG) ====================
+// ==================== SETTINGS FORM ====================
 document.getElementById("settingsForm").addEventListener("submit", function (e) {
     e.preventDefault();
 

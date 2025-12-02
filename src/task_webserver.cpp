@@ -72,3 +72,29 @@ void Webserver_reconnect()
     }
     ElegantOTA.loop();
 }
+
+void webserver_task(void *parameter)
+{
+    // Initialize LittleFS for serving web files
+    if (!LittleFS.begin())
+    {
+        Serial.println("❌ LittleFS Mount Failed");
+        vTaskDelete(NULL);
+        return;
+    }
+    Serial.println("✅ LittleFS Mounted Successfully");
+
+    // Start web server
+    connnectWSV();
+    Serial.println("🌐 Web Server Started in AP Mode");
+    Serial.print("📡 Connect to AP: ");
+    Serial.println(WiFi.softAPIP());
+
+    // Keep the task running and handle OTA
+    while (true)
+    {
+        ElegantOTA.loop();
+        ws.cleanupClients(); // Clean up disconnected WebSocket clients
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+    }
+}

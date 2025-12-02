@@ -57,15 +57,44 @@
     <!-- THIẾT BỊ -->
     <div id="device" class="section" style="display:none;">
       <header>
-        <h1>Điều khiển Relay</h1>
-        <p>Quản lý và điều khiển các relay được kết nối.</p>
+        <h1>Điều khiển thiết bị</h1>
+        <p>Quản lý và điều khiển LED1 và LED2</p>
       </header>
 
-      <div class="device-list" id="relayContainer"></div>
+      <div class="device-list">
+        <!-- LED 1 Control Card -->
+        <div class="device-card">
+          <i class="fa-solid fa-lightbulb device-icon"></i>
+          <h3>LED 1</h3>
+          <p>Đèn LED chính - GPIO 2</p>
+          <button class="toggle-btn" id="led1-btn" onclick="toggleLED1()">OFF</button>
+          <div class="status-indicator" id="led1-status">
+            <span class="status-dot off"></span>
+            <span class="status-text">Tắt</span>
+          </div>
+        </div>
 
-      <button class="add-relay-btn" onclick="openAddRelayDialog()">
-        <i class="fa-solid fa-plus"></i>
-      </button>
+        <!-- LED 2 Control Card -->
+        <div class="device-card">
+          <i class="fa-solid fa-lightbulb device-icon"></i>
+          <h3>LED 2</h3>
+          <p>Đèn LED phụ - GPIO 4</p>
+          <button class="toggle-btn" id="led2-btn" onclick="toggleLED2()">OFF</button>
+          <div class="status-indicator" id="led2-status">
+            <span class="status-dot off"></span>
+            <span class="status-text">Tắt</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <button class="control-btn all-on" onclick="turnAllOn()">
+          <i class="fa-solid fa-power-off"></i> Bật tất cả
+        </button>
+        <button class="control-btn all-off" onclick="turnAllOff()">
+          <i class="fa-solid fa-power-off"></i> Tắt tất cả
+        </button>
+      </div>
     </div>
 
     <!-- THÔNG TIN -->
@@ -112,36 +141,6 @@
             <i class="fa-solid fa-floppy-disk"></i> Lưu cấu hình
           </button>
         </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- HỘP THOẠI THÊM RELAY -->
-  <div id="addRelayDialog" class="dialog-overlay" style="display:none;">
-    <div class="dialog fade-in">
-      <h3><i class="fa-solid fa-plug"></i> Thêm relay mới</h3>
-      <p>Nhập tên relay và chân GPIO</p>
-      <div class="input-field">
-        <input type="text" id="relayName" placeholder="Tên relay">
-      </div>
-      <div class="input-field">
-        <input type="number" id="relayGPIO" placeholder="Chân GPIO">
-      </div>
-      <div class="dialog-buttons">
-        <button class="confirm" onclick="saveRelay()">Lưu</button>
-        <button class="cancel" onclick="closeAddRelayDialog()">Hủy</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- HỘP THOẠI XÓA -->
-  <div id="confirmDeleteDialog" class="dialog-overlay" style="display:none;">
-    <div class="dialog warning fade-in">
-      <h3>⚠️ Xác nhận xóa</h3>
-      <p>Bạn có chắc chắn muốn xóa relay này không?</p>
-      <div class="dialog-buttons">
-        <button class="danger" onclick="confirmDelete()">Xóa</button>
-        <button class="cancel" onclick="closeConfirmDelete()">Hủy</button>
       </div>
     </div>
   </div>

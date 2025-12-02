@@ -20,6 +20,13 @@ void setup()
   Serial.begin(115200);
   check_info_File(0);
 
+  // Start WiFi in Access Point mode for Task 4
+  Serial.println("🚀 Starting WiFi in Access Point mode...");
+  startAP();
+  Serial.print("📡 AP IP Address: ");
+  Serial.println(WiFi.softAPIP());
+  Serial.println("📱 Connect to the AP and navigate to the IP address above");
+
   // AppContext as a static local (not a global variable in file scope)
   static AppContext_t appCtx;
 
@@ -36,11 +43,18 @@ void setup()
   appCtx.currentState   = STATE_NORMAL;
   appCtx.lastTemperature = 0.0f;
   appCtx.lastHumidity    = 0.0f;  
+  
+  // Task 1, 2, 3 tasks
   xTaskCreate(led_blinky, "Task LED Blink", 2048, (void*)&appCtx, 2, NULL);
   xTaskCreate(neo_blinky, "Task NEO Blink", 2048, (void*)&appCtx, 2, NULL);
   xTaskCreate(manager_task, "Task Manager", 4096, (void*)&appCtx, 3, NULL);
   xTaskCreate(temp_humi_monitor, "Task TEMP HUMI Monitor", 2048, (void*)&appCtx, 3, NULL);
   xTaskCreate(lcd_task, "Task LCD", 4096, (void*)&appCtx, 2, NULL);
+  
+  // Task 4: Web Server in Access Point Mode
+  xTaskCreate(webserver_task, "Task Web Server", 8192, NULL, 2, NULL);
+  
+  // Serial.println("✅ All tasks created successfully");
   // xTaskCreate(main_server_task, "Task Main Server" ,8192  ,NULL  ,2 , NULL);
   // xTaskCreate( tiny_ml_task, "Tiny ML Task" ,2048  ,NULL  ,2 , NULL);
   // xTaskCreate(coreiot_task, "CoreIOT Task" ,4096  ,NULL  ,2 , NULL);
@@ -49,16 +63,5 @@ void setup()
 
 void loop()
 {
-  if (check_info_File(1))
-  {
-    if (!Wifi_reconnect())
-    {
-      Webserver_stop();
-    }
-    else
-    {
-      //CORE_IOT_reconnect();
-    }
-  }
-  Webserver_reconnect();
+  // Empty loop - everything handled by FreeRTOS tasks
 }
