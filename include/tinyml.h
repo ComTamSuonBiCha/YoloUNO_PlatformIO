@@ -13,16 +13,6 @@
 #include "tensorflow/lite/micro/system_setup.h"
 #include "tensorflow/lite/schema/schema_generated.h"
 
-// Semaphore for sensor data communication (replacing global variables)
-extern SemaphoreHandle_t xSensorDataSemaphore;
-
-// Structure to hold sensor data
-typedef struct {
-    float temperature;
-    float humidity;
-    bool data_valid;
-} SensorData_t;
-
 // Structure to hold inference results and accuracy metrics
 typedef struct {
     float anomaly_score;          // Model output (0 = normal, 1 = anomaly)
@@ -58,7 +48,6 @@ void printAccuracyMetrics();
 AccuracyMetrics_t getAccuracyMetrics();
 
 // Helper functions
-bool getSensorDataViaSemaphore(SensorData_t* sensor_data, TickType_t timeout_ms = 1000);
 InferenceResult_t runInference(float temperature, float humidity);
 
 // Threshold for anomaly detection (adjust based on your model)

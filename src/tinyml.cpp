@@ -1,8 +1,5 @@
 #include "tinyml.h"
 
-// Semaphore for sensor data communication (replacing global variables)
-SemaphoreHandle_t xSensorDataSemaphore = xSemaphoreCreateBinary();
-
 // Global variables for TinyML (internal to this module)
 namespace
 {
@@ -88,32 +85,7 @@ void setupTinyML()
     Serial.println("=== TinyML Setup Complete ===\n");
 }
 
-/**
- * @brief Get sensor data using semaphore-based communication
- * 
- * This function retrieves sensor data from the sensor task using a semaphore,
- * replacing the need for global variables as required by Task 3.
- * 
- * @param sensor_data Pointer to structure to store sensor data
- * @param timeout_ms Timeout in milliseconds (default: 1000ms)
- * @return true if data retrieved successfully, false otherwise
- */
-bool getSensorDataViaSemaphore(SensorData_t* sensor_data, TickType_t timeout_ms)
-{
-    // Wait for semaphore signal from sensor task
-    if (xSemaphoreTake(xSensorDataSemaphore, pdMS_TO_TICKS(timeout_ms)) == pdTRUE)
-    {
-        // In a real implementation, sensor data would be passed via message queue
-        // Implement proper message queue
-        sensor_data->temperature = glob_temperature; // Temporary: will be replaced with queue
-        sensor_data->humidity = glob_humidity;       // Temporary: will be replaced with queue
-        sensor_data->data_valid = true;
-        return true;
-    }
-    
-    sensor_data->data_valid = false;
-    return false;
-}
+
 
 /**
  * @brief Run inference on sensor data
@@ -346,13 +318,14 @@ AccuracyMetrics_t getAccuracyMetrics()
  * 
  * This task:
  * 1. Initializes TensorFlow Lite Micro
- * 2. Continuously reads sensor data via semaphore
+ * 2. Continuously reads sensor data via queue
  * 3. Runs inference on the data
  * 4. Evaluates and logs results
  * 5. Optionally collects data for training dataset
  */
 void tiny_ml_task(void *pvParameters)
 {
+    AppContext_t *ctx = (AppContext_t *) pvParameters;
     Serial.println("TinyML Task Started");
 
     // Initialize TensorFlow Lite Micro
@@ -364,7 +337,7 @@ void tiny_ml_task(void *pvParameters)
     enableDataCollectionMode(true);
     
     // Initialize sensor data structure
-    SensorData_t sensor_data;
+    SensorSample_t sensor_data;
     InferenceResult_t inference_result;
     
     // Counter for periodic accuracy reporting
@@ -372,10 +345,11 @@ void tiny_ml_task(void *pvParameters)
 
     while (1)
     {
-        // Get sensor data using semaphore (non-blocking)
-        if (getSensorDataViaSemaphore(&sensor_data, 1000))
+        // Get sensor data from queue (with timeout)
+        if (xQueueReceive(ctx->sensorQueue, &sensor_data, pdMS_TO_TICKS(5000)) == pdTRUE)
         {
-            if (sensor_data.data_valid)
+            // Validate sensor data
+            if (!isnan(sensor_data.temperature) && !isnan(sensor_data.humidity))
             {
                 // Run inference
                 inference_result = runInference(sensor_data.temperature, sensor_data.humidity);
@@ -387,9 +361,9 @@ void tiny_ml_task(void *pvParameters)
                     
                     // Print inference results
                     Serial.print("[TinyML] Temp: ");
-                    Serial.print(sensor_data.temperature);
+                    Serial.print(sensor_data.temperature, 1);
                     Serial.print("°C, Hum: ");
-                    Serial.print(sensor_data.humidity);
+                    Serial.print(sensor_data.humidity, 1);
                     Serial.print("%, Anomaly Score: ");
                     Serial.print(inference_result.anomaly_score, 4);
                     Serial.print(", Prediction: ");
@@ -432,13 +406,16 @@ void tiny_ml_task(void *pvParameters)
                     Serial.println("[TinyML] ERROR: Inference failed!");
                 }
             }
+            else
+            {
+                Serial.println("[TinyML] WARNING: Invalid sensor data (NaN values)");
+            }
         }
         else
         {
-            Serial.println("[TinyML] WARNING: Failed to get sensor data (timeout)");
+            Serial.println("[TinyML] WARNING: Failed to receive sensor data from queue (timeout)");
         }
         
-        // Delay before next inference
-        vTaskDelay(pdMS_TO_TICKS(5000)); // 5 seconds
+        // No additional delay needed - queue receive provides timing
     }
 }
