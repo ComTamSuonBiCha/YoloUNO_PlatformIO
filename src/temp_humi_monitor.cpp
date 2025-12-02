@@ -1,7 +1,8 @@
 #include "temp_humi_monitor.h"
+#include "tinyml.h"  // For semaphore communication with TinyML task
+
 DHT20 dht20;
 LiquidCrystal_I2C lcd(33,16,2);
-
 
 void temp_humi_monitor(void *pvParameters){
 
@@ -28,8 +29,16 @@ void temp_humi_monitor(void *pvParameters){
         }
 
         //Update global variables for temperature and humidity
+        // Note: This is temporary - Task 3 requires removing globals and using semaphores
         glob_temperature = temperature;
         glob_humidity = humidity;
+
+        // Signal semaphore for TinyML task (semaphore-based communication)
+        // This allows TinyML task to know new sensor data is available
+        if (xSensorDataSemaphore != NULL)
+        {
+            xSemaphoreGive(xSensorDataSemaphore);
+        }
 
         // Print the results
         
