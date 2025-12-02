@@ -4,7 +4,10 @@ LiquidCrystal_I2C lcd(33,16,2);
 
 
 void temp_humi_monitor(void *pvParameters){
+    AppContext_t *ctx = (AppContext_t *) pvParameters;
 
+    // Local sensor object (not global)
+    static DHT20 dht20;
     Wire.begin(11, 12);
     Serial.begin(115200);
     dht20.begin();
@@ -26,10 +29,14 @@ void temp_humi_monitor(void *pvParameters){
             temperature = humidity =  -1;
             //return;
         }
+        SensorSample_t sample;
+        sample.temperature = temperature;
+        sample.humidity    = humidity;
 
-        //Update global variables for temperature and humidity
-        glob_temperature = temperature;
-        glob_humidity = humidity;
+        // Send to manager (blocking if queue full)
+        if (ctx->sensorQueue != nullptr) {
+            xQueueSend(ctx->sensorQueue, &sample, portMAX_DELAY);
+        }
 
         // Print the results
         
