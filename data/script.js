@@ -58,6 +58,9 @@ function onMessage(event) {
 
 
 // ==================== UI NAVIGATION ====================
+let relayList = [];
+let deleteTarget = null;
+
 function showSection(id, event) {
     document.querySelectorAll('.section').forEach(sec => sec.style.display = 'none');
     document.getElementById(id).style.display = id === 'settings' ? 'flex' : 'block';
@@ -214,6 +217,94 @@ function turnAllOff() {
     
     Send_Data(command1);
     setTimeout(() => Send_Data(command2), 100);
+    
+    // Turn off all custom relays
+    relayList.forEach(relay => {
+        relay.state = false;
+    });
+    renderRelays();
+}
+
+
+// ==================== CUSTOM DEVICE FUNCTIONS ====================
+function openAddRelayDialog() {
+    document.getElementById('addRelayDialog').style.display = 'flex';
+}
+
+function closeAddRelayDialog() {
+    document.getElementById('addRelayDialog').style.display = 'none';
+    document.getElementById('relayName').value = '';
+    document.getElementById('relayGPIO').value = '';
+}
+
+function saveRelay() {
+    const name = document.getElementById('relayName').value.trim();
+    const gpio = document.getElementById('relayGPIO').value.trim();
+    
+    if (!name || !gpio) {
+        alert("⚠️ Vui lòng điền đầy đủ thông tin!");
+        return;
+    }
+    
+    relayList.push({ id: Date.now(), name, gpio: parseInt(gpio), state: false });
+    renderRelays();
+    closeAddRelayDialog();
+}
+
+function renderRelays() {
+    const container = document.getElementById('relayContainer');
+    container.innerHTML = "";
+    
+    relayList.forEach(r => {
+        const card = document.createElement('div');
+        card.className = 'device-card';
+        card.innerHTML = `
+            <i class="fa-solid fa-bolt device-icon"></i>
+            <h3>${r.name}</h3>
+            <p>GPIO: ${r.gpio}</p>
+            <button class="toggle-btn ${r.state ? 'on' : ''}" onclick="toggleRelay(${r.id})">
+                ${r.state ? 'ON' : 'OFF'}
+            </button>
+            <div class="status-indicator">
+                <span class="status-dot ${r.state ? 'on' : 'off'}"></span>
+                <span class="status-text">${r.state ? 'Bật' : 'Tắt'}</span>
+            </div>
+            <i class="fa-solid fa-trash delete-icon" onclick="showDeleteDialog(${r.id})"></i>
+        `;
+        container.appendChild(card);
+    });
+}
+
+function toggleRelay(id) {
+    const relay = relayList.find(r => r.id === id);
+    if (relay) {
+        relay.state = !relay.state;
+        
+        const command = JSON.stringify({
+            page: "device",
+            device: relay.name,
+            gpio: relay.gpio,
+            status: relay.state ? "ON" : "OFF"
+        });
+        
+        Send_Data(command);
+        renderRelays();
+    }
+}
+
+function showDeleteDialog(id) {
+    deleteTarget = id;
+    document.getElementById('confirmDeleteDialog').style.display = 'flex';
+}
+
+function closeConfirmDelete() {
+    document.getElementById('confirmDeleteDialog').style.display = 'none';
+}
+
+function confirmDelete() {
+    relayList = relayList.filter(r => r.id !== deleteTarget);
+    renderRelays();
+    closeConfirmDelete();
 }
 
 
