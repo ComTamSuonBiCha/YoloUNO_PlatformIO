@@ -6,12 +6,6 @@ var websocket;
 var led1State = false;
 var led2State = false;
 
-window.addEventListener('load', onLoad);
-
-function onLoad(event) {
-    initWebSocket();
-}
-
 function onOpen(event) {
     console.log('Connection opened');
 }
@@ -46,11 +40,18 @@ function onMessage(event) {
         
         // Handle sensor data updates
         if (data.page === "sensor") {
+            console.log("🌡️ Sensor data received - Temp:", data.temperature, "Humi:", data.humidity);
             if (window.gaugeTemp && data.temperature !== undefined) {
                 window.gaugeTemp.refresh(data.temperature);
+                console.log("✅ Temperature gauge updated");
+            } else {
+                console.warn("⚠️ Temperature gauge not available");
             }
             if (window.gaugeHumi && data.humidity !== undefined) {
                 window.gaugeHumi.refresh(data.humidity);
+                console.log("✅ Humidity gauge updated");
+            } else {
+                console.warn("⚠️ Humidity gauge not available");
             }
         }
         
@@ -81,35 +82,57 @@ function showSection(id, event) {
 
 
 // ==================== HOME GAUGES ====================
-window.onload = function () {
-    // Store gauges globally so they can be updated from WebSocket
-    window.gaugeTemp = new JustGage({
-        id: "gauge_temp",
-        value: 0,
-        min: -10,
-        max: 50,
-        donut: true,
-        pointer: false,
-        gaugeWidthScale: 0.25,
-        gaugeColor: "transparent",
-        levelColorsGradient: true,
-        levelColors: ["#00BCD4", "#4CAF50", "#FFC107", "#F44336"]
-    });
-
-    window.gaugeHumi = new JustGage({
-        id: "gauge_humi",
-        value: 0,
-        min: 0,
-        max: 100,
-        donut: true,
-        pointer: false,
-        gaugeWidthScale: 0.25,
-        gaugeColor: "transparent",
-        levelColorsGradient: true,
-        levelColors: ["#42A5F5", "#00BCD4", "#0288D1"]
-    });
+// Initialize gauges after all libraries are loaded
+function initGauges() {
+    // Check if JustGage library is loaded
+    if (typeof JustGage === 'undefined') {
+        console.warn("⚠️ JustGage library not loaded yet, retrying...");
+        setTimeout(initGauges, 200);
+        return;
+    }
     
-    console.log("📊 Gauges initialized. Waiting for real sensor data...");
+    try {
+        // Store gauges globally so they can be updated from WebSocket
+        window.gaugeTemp = new JustGage({
+            id: "gauge_temp",
+            value: 0,
+            min: -10,
+            max: 50,
+            donut: true,
+            pointer: false,
+            gaugeWidthScale: 0.25,
+            gaugeColor: "transparent",
+            levelColorsGradient: true,
+            levelColors: ["#00BCD4", "#4CAF50", "#FFC107", "#F44336"]
+        });
+
+        window.gaugeHumi = new JustGage({
+            id: "gauge_humi",
+            value: 0,
+            min: 0,
+            max: 100,
+            donut: true,
+            pointer: false,
+            gaugeWidthScale: 0.25,
+            gaugeColor: "transparent",
+            levelColorsGradient: true,
+            levelColors: ["#42A5F5", "#00BCD4", "#0288D1"]
+        });
+        
+        console.log("📊 Gauges initialized successfully!");
+    } catch (error) {
+        console.error("❌ Error initializing gauges:", error);
+    }
+}
+
+window.onload = function () {
+    console.log("🚀 Page loaded, initializing...");
+    
+    // Initialize WebSocket first
+    initWebSocket();
+    
+    // Wait for libraries to be ready, then init gauges
+    setTimeout(initGauges, 1000);
 };
 
 
