@@ -14,6 +14,7 @@
 #include "task_webserver.h"
 #include "task_core_iot.h"
 #include "task_manager.h"
+#include "task_lcd.h"
 void setup()
 {
   Serial.begin(115200);
@@ -39,6 +40,7 @@ void setup()
   xTaskCreate(neo_blinky, "Task NEO Blink", 2048, (void*)&appCtx, 2, NULL);
   xTaskCreate(manager_task, "Task Manager", 4096, (void*)&appCtx, 3, NULL);
   xTaskCreate(temp_humi_monitor, "Task TEMP HUMI Monitor", 2048, (void*)&appCtx, 3, NULL);
+  xTaskCreate(lcd_task, "Task LCD", 4096, (void*)&appCtx, 2, NULL);
   // xTaskCreate(main_server_task, "Task Main Server" ,8192  ,NULL  ,2 , NULL);
   // xTaskCreate( tiny_ml_task, "Tiny ML Task" ,2048  ,NULL  ,2 , NULL);
   // xTaskCreate(coreiot_task, "CoreIOT Task" ,4096  ,NULL  ,2 , NULL);

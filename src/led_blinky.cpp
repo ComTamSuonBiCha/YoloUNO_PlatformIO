@@ -1,6 +1,6 @@
 #include "led_blinky.h"
 
-void led_blinky_task(void *pvParameters) {
+void led_blinky(void *pvParameters) {
     AppContext_t *ctx = (AppContext_t *) pvParameters;
     pinMode(LED_GPIO, OUTPUT);
 
