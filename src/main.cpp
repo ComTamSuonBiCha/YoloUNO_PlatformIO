@@ -4,7 +4,7 @@
 #include "neo_blinky.h"
 #include "temp_humi_monitor.h"
 // #include "mainserver.h"
-// #include "tinyml.h"
+#include "tinyml.h"  // Enable TinyML task for Task 5
 #include "coreiot.h"
 
 // include task

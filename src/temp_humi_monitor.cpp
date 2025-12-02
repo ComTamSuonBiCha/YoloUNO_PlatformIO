@@ -1,7 +1,8 @@
 #include "temp_humi_monitor.h"
+#include "tinyml.h"  // For semaphore communication with TinyML task
+
 DHT20 dht20;
 LiquidCrystal_I2C lcd(33,16,2);
-
 
 void temp_humi_monitor(void *pvParameters){
     AppContext_t *ctx = (AppContext_t *) pvParameters;
