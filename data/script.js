@@ -43,7 +43,18 @@ function onMessage(event) {
     console.log("📩 Nhận:", event.data);
     try {
         var data = JSON.parse(event.data);
-        // Handle status updates from server if needed
+        
+        // Handle sensor data updates
+        if (data.page === "sensor") {
+            if (window.gaugeTemp && data.temperature !== undefined) {
+                window.gaugeTemp.refresh(data.temperature);
+            }
+            if (window.gaugeHumi && data.humidity !== undefined) {
+                window.gaugeHumi.refresh(data.humidity);
+            }
+        }
+        
+        // Handle device status updates
         if (data.page === "device") {
             if (data.device === "LED1") {
                 updateLED1UI(data.status === "ON");
@@ -71,9 +82,10 @@ function showSection(id, event) {
 
 // ==================== HOME GAUGES ====================
 window.onload = function () {
-    const gaugeTemp = new JustGage({
+    // Store gauges globally so they can be updated from WebSocket
+    window.gaugeTemp = new JustGage({
         id: "gauge_temp",
-        value: 26,
+        value: 0,
         min: -10,
         max: 50,
         donut: true,
@@ -84,9 +96,9 @@ window.onload = function () {
         levelColors: ["#00BCD4", "#4CAF50", "#FFC107", "#F44336"]
     });
 
-    const gaugeHumi = new JustGage({
+    window.gaugeHumi = new JustGage({
         id: "gauge_humi",
-        value: 60,
+        value: 0,
         min: 0,
         max: 100,
         donut: true,
@@ -96,11 +108,8 @@ window.onload = function () {
         levelColorsGradient: true,
         levelColors: ["#42A5F5", "#00BCD4", "#0288D1"]
     });
-
-    setInterval(() => {
-        gaugeTemp.refresh(Math.floor(Math.random() * 15) + 20);
-        gaugeHumi.refresh(Math.floor(Math.random() * 40) + 40);
-    }, 3000);
+    
+    console.log("📊 Gauges initialized. Waiting for real sensor data...");
 };
 
 
