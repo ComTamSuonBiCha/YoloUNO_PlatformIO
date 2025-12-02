@@ -41,17 +41,23 @@ function onMessage(event) {
         // Handle sensor data updates
         if (data.page === "sensor") {
             console.log("🌡️ Sensor data received - Temp:", data.temperature, "Humi:", data.humidity);
-            if (window.gaugeTemp && data.temperature !== undefined) {
-                window.gaugeTemp.refresh(data.temperature);
-                console.log("✅ Temperature gauge updated");
-            } else {
-                console.warn("⚠️ Temperature gauge not available");
+            
+            // Update temperature gauge
+            if (data.temperature !== undefined) {
+                const tempValue = document.getElementById('temp-value');
+                if (tempValue) {
+                    tempValue.textContent = data.temperature.toFixed(1);
+                    console.log("✅ Temperature updated:", data.temperature.toFixed(1));
+                }
             }
-            if (window.gaugeHumi && data.humidity !== undefined) {
-                window.gaugeHumi.refresh(data.humidity);
-                console.log("✅ Humidity gauge updated");
-            } else {
-                console.warn("⚠️ Humidity gauge not available");
+            
+            // Update humidity gauge
+            if (data.humidity !== undefined) {
+                const humiValue = document.getElementById('humi-value');
+                if (humiValue) {
+                    humiValue.textContent = data.humidity.toFixed(1);
+                    console.log("✅ Humidity updated:", data.humidity.toFixed(1));
+                }
             }
         }
         
@@ -83,56 +89,11 @@ function showSection(id, event) {
 
 // ==================== HOME GAUGES ====================
 // Initialize gauges after all libraries are loaded
-function initGauges() {
-    // Check if JustGage library is loaded
-    if (typeof JustGage === 'undefined') {
-        console.warn("⚠️ JustGage library not loaded yet, retrying...");
-        setTimeout(initGauges, 200);
-        return;
-    }
-    
-    try {
-        // Store gauges globally so they can be updated from WebSocket
-        window.gaugeTemp = new JustGage({
-            id: "gauge_temp",
-            value: 0,
-            min: -10,
-            max: 50,
-            donut: true,
-            pointer: false,
-            gaugeWidthScale: 0.25,
-            gaugeColor: "transparent",
-            levelColorsGradient: true,
-            levelColors: ["#00BCD4", "#4CAF50", "#FFC107", "#F44336"]
-        });
-
-        window.gaugeHumi = new JustGage({
-            id: "gauge_humi",
-            value: 0,
-            min: 0,
-            max: 100,
-            donut: true,
-            pointer: false,
-            gaugeWidthScale: 0.25,
-            gaugeColor: "transparent",
-            levelColorsGradient: true,
-            levelColors: ["#42A5F5", "#00BCD4", "#0288D1"]
-        });
-        
-        console.log("📊 Gauges initialized successfully!");
-    } catch (error) {
-        console.error("❌ Error initializing gauges:", error);
-    }
-}
-
 window.onload = function () {
-    console.log("🚀 Page loaded, initializing...");
+    console.log("🚀 Page loaded, initializing WebSocket...");
     
-    // Initialize WebSocket first
+    // Initialize WebSocket
     initWebSocket();
-    
-    // Wait for libraries to be ready, then init gauges
-    setTimeout(initGauges, 1000);
 };
 
 
