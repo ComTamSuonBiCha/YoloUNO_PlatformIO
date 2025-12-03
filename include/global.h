@@ -22,6 +22,7 @@ extern SemaphoreHandle_t xBinarySemaphoreInternet;
 typedef struct {
     float temperature;
     float humidity;
+    unsigned long timestamp; // Timestamp in milliseconds
 } SensorSample_t;
 
 // ---- LED patterns (Task 1) ----
@@ -50,6 +51,7 @@ typedef struct {
     QueueHandle_t sensorQueue;   // sensor -> manager
     QueueHandle_t ledQueue;      // manager -> LED
     QueueHandle_t neoQueue;      // manager -> NeoPixel
+    QueueHandle_t tinymlQueue;   // sensor -> TinyML (Task 5)
 
     SemaphoreHandle_t stateSemaphore; // manager -> LCD (state changes)
     SemaphoreHandle_t dataMutex;      // protect state + last values

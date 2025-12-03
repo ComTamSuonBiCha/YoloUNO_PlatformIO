@@ -34,6 +34,7 @@ void setup()
   appCtx.sensorQueue = xQueueCreate(10, sizeof(SensorSample_t));
   appCtx.ledQueue    = xQueueCreate(5,  sizeof(LedPattern_t));
   appCtx.neoQueue    = xQueueCreate(5,  sizeof(NeoColor_t));
+  appCtx.tinymlQueue = xQueueCreate(10, sizeof(SensorSample_t)); // Queue for TinyML task
 
   // Create semaphores
   appCtx.stateSemaphore = xSemaphoreCreateBinary();

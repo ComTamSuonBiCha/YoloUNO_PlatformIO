@@ -33,15 +33,24 @@ void temp_humi_monitor(void *pvParameters){
         SensorSample_t sample;
         sample.temperature = temperature;
         sample.humidity    = humidity;
+        sample.timestamp   = millis(); // Add timestamp
 
         // Send to manager (blocking if queue full)
         if (ctx->sensorQueue != nullptr) {
-            xQueueSend(ctx->sensorQueue, &sample, portMAX_DELAY);
+            xQueueSend(ctx->sensorQueue, &sample, portMAX_DELAY); // block indefinitely
+            // Reliability > Speed (blocking acceptable)
+        }
+        
+        // Send to TinyML task (non-blocking to avoid delays)
+        if (ctx->tinymlQueue != nullptr) {
+            xQueueSend(ctx->tinymlQueue, &sample, 0); // no block if full
+            // Speed > Reliability (dropping samples is OK)
         }
 
         // Print the results
-        
-        Serial.print("Humidity: ");
+        Serial.print("Timestamp: ");
+        Serial.print(sample.timestamp);
+        Serial.print(" ms, Humidity: ");
         Serial.print(humidity);
         Serial.print("%  Temperature: ");
         Serial.print(temperature);

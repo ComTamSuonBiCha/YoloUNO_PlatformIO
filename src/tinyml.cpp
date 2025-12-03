@@ -345,12 +345,16 @@ void tiny_ml_task(void *pvParameters)
 
     while (1)
     {
-        // Get sensor data from queue (with timeout)
-        if (xQueueReceive(ctx->sensorQueue, &sensor_data, pdMS_TO_TICKS(5000)) == pdTRUE)
+        // Get sensor data from dedicated TinyML queue (with timeout)
+        if (xQueueReceive(ctx->tinymlQueue, &sensor_data, pdMS_TO_TICKS(10000)) == pdTRUE)
         {
+            // Print inference timestamp
+            Serial.print("[TinyML] Inference Timestamp: ");
+            Serial.print(sensor_data.timestamp);
+            Serial.println(" ms");
+
             // Validate sensor data
-            if (!isnan(sensor_data.temperature) && !isnan(sensor_data.humidity))
-            {
+            if (!isnan(sensor_data.temperature) && !isnan(sensor_data.humidity)) {
                 // Run inference
                 inference_result = runInference(sensor_data.temperature, sensor_data.humidity);
                 
