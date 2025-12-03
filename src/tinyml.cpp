@@ -106,9 +106,13 @@ InferenceResult_t runInference(float temperature, float humidity)
         return result;
     }
 
-    // Prepare input data
-    input->data.f[0] = temperature;
-    input->data.f[1] = humidity;
+    // ---- apply SAME StandardScaler as in Python ----
+    float temp_norm = (temperature - TEMP_MEAN) / TEMP_STD;
+    float hum_norm  = (humidity   - HUM_MEAN)  / HUM_STD;
+
+    // Prepare input data (normalized)
+    input->data.f[0] = temp_norm;
+    input->data.f[1] = hum_norm;
 
     // Run inference
     TfLiteStatus invoke_status = interpreter->Invoke();

@@ -52,5 +52,8 @@ InferenceResult_t runInference(float temperature, float humidity);
 
 // Threshold for anomaly detection (adjust based on your model)
 #define ANOMALY_THRESHOLD 0.5f
-
+#define TEMP_MEAN   27.56f
+#define TEMP_STD    3.54f
+#define HUM_MEAN    79.86f
+#define HUM_STD     7.98f
 #endif
