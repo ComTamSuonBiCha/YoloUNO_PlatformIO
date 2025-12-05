@@ -55,12 +55,17 @@ void setup()
   // Task 4: Web Server in Access Point Mode
   xTaskCreate(webserver_task, "Task Web Server", 8192, NULL, 2, NULL);
   
+  // WiFi Station Task - Connects to WiFi if credentials are available
+  xTaskCreate(wifi_sta_task, "Task WiFi STA", 4096, NULL, 3, NULL);
+  
   // Task 5: TinyML Task - Enable for anomaly detection
   xTaskCreate(tiny_ml_task, "Task TinyML", 8192, (void*)&appCtx, 2, NULL);
   
+  // Task 6: CoreIOT Cloud Server - Data Publishing and RPC Control
+  xTaskCreate(coreiot_task, "CoreIOT Task", 4096, NULL, 2, NULL);
+  
   Serial.println("✅ All tasks created successfully");
   // xTaskCreate(main_server_task, "Task Main Server" ,8192  ,NULL  ,2 , NULL);
-  // xTaskCreate(coreiot_task, "CoreIOT Task" ,4096  ,NULL  ,2 , NULL);
   // xTaskCreate(Task_Toogle_BOOT, "Task_Toogle_BOOT", 4096, NULL, 2, NULL);
 }
 

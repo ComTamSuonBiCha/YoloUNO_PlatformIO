@@ -71,6 +71,9 @@ void manager_task(void *pvParameters) {
 
                 xSemaphoreGive(ctx->dataMutex);
             }
+            
+            glob_temperature = t;
+            glob_humidity = h;
 
             // Notify LCD that state/values changed
             if (ctx->stateSemaphore != nullptr) {
