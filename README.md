@@ -28,7 +28,7 @@ monitor_speed = 115200
 build_flags =
     -D ARDUINO_USB_MODE=1
     -D ARDUINO_USB_CDC_ON_BOOT=1
-
+```
 ## Development version
 
 ```ini
@@ -40,7 +40,7 @@ monitor_speed = 115200
 build_flags =
     -D ARDUINO_USB_MODE=1
     -D ARDUINO_USB_CDC_ON_BOOT=1
-
+```
     
 # Configuration
 

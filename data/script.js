@@ -153,7 +153,7 @@ function toggleLED1() {
     const command = JSON.stringify({
         page: "device",
         device: "LED1",
-        gpio: 2,
+        gpio: 6,
         status: led1State ? "ON" : "OFF"
     });
     
@@ -167,7 +167,7 @@ function toggleLED2() {
     const command = JSON.stringify({
         page: "device",
         device: "LED2",
-        gpio: 4,
+        gpio: 8,
         status: led2State ? "ON" : "OFF"
     });
     
@@ -223,14 +223,14 @@ function turnAllOn() {
     const command1 = JSON.stringify({
         page: "device",
         device: "LED1",
-        gpio: 2,
+        gpio: 6,
         status: "ON"
     });
     
     const command2 = JSON.stringify({
         page: "device",
         device: "LED2",
-        gpio: 4,
+        gpio: 8,
         status: "ON"
     });
     
@@ -245,14 +245,14 @@ function turnAllOff() {
     const command1 = JSON.stringify({
         page: "device",
         device: "LED1",
-        gpio: 2,
+        gpio: 6,
         status: "OFF"
     });
     
     const command2 = JSON.stringify({
         page: "device",
         device: "LED2",
-        gpio: 4,
+        gpio: 8,
         status: "OFF"
     });
     

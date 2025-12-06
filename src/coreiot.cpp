@@ -1,8 +1,8 @@
 #include "coreiot.h"
 
 
-#define LED1_GPIO 2
-#define LED2_GPIO 4
+#define LED1_GPIO 6
+#define LED2_GPIO 8
 
 WiFiClient espClient;
 PubSubClient client(espClient);
