@@ -4,23 +4,20 @@
 void neo_blinky(void *pvParameters){
 
     Adafruit_NeoPixel strip(LED_COUNT, NEO_PIN, NEO_GRB + NEO_KHZ800);
+    AppContext_t *ctx = (AppContext_t *) pvParameters;
+
     strip.begin();
-    // Set all pixels to off to start
-    strip.clear();
-    strip.show();
+    strip.show(); // all off
 
-    while(1) {                          
-        strip.setPixelColor(0, strip.Color(255, 0, 0)); // Set pixel 0 to red
-        strip.show(); // Update the strip
+    NeoColor_t color = {0, 0, 0};
 
-        // Wait for 500 milliseconds
-        vTaskDelay(500);
-
-        // Set the pixel to off
-        strip.setPixelColor(0, strip.Color(0, 0, 0)); // Turn pixel 0 off
-        strip.show(); // Update the strip
-
-        // Wait for another 500 milliseconds
-        vTaskDelay(500);
+    while (1) {
+        // Wait for new color from manager
+        if (xQueueReceive(ctx->neoQueue, &color, portMAX_DELAY) == pdTRUE) {
+            for (int i = 0; i < NEOPIXEL_COUNT; ++i) {
+                strip.setPixelColor(i, strip.Color(color.r, color.g, color.b));
+            }
+            strip.show();
+        }
     }
 }

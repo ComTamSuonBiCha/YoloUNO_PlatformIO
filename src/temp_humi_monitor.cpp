@@ -1,10 +1,14 @@
 #include "temp_humi_monitor.h"
+#include "tinyml.h"  // For semaphore communication with TinyML task
+
 DHT20 dht20;
 LiquidCrystal_I2C lcd(33,16,2);
 
-
 void temp_humi_monitor(void *pvParameters){
+    AppContext_t *ctx = (AppContext_t *) pvParameters;
 
+    // Local sensor object (not global)
+    static DHT20 dht20;
     Wire.begin(11, 12);
     Serial.begin(115200);
     dht20.begin();
@@ -26,18 +30,37 @@ void temp_humi_monitor(void *pvParameters){
             temperature = humidity =  -1;
             //return;
         }
+        SensorSample_t sample;
+        sample.temperature = temperature;
+        sample.humidity    = humidity;
+        sample.timestamp   = millis(); // Add timestamp
 
-        //Update global variables for temperature and humidity
-        glob_temperature = temperature;
-        glob_humidity = humidity;
+        // Send to manager (blocking if queue full)
+        if (ctx->sensorQueue != nullptr) {
+            xQueueSend(ctx->sensorQueue, &sample, portMAX_DELAY); // block indefinitely
+            // Reliability > Speed (blocking acceptable)
+        }
+        
+        // Send to TinyML task (non-blocking to avoid delays)
+        if (ctx->tinymlQueue != nullptr) {
+            xQueueSend(ctx->tinymlQueue, &sample, 0); // no block if full
+            // Speed > Reliability (dropping samples is OK)
+        }
 
         // Print the results
-        
-        Serial.print("Humidity: ");
+        Serial.print("Timestamp: ");
+        Serial.print(sample.timestamp);
+        Serial.print(" ms, Humidity: ");
         Serial.print(humidity);
         Serial.print("%  Temperature: ");
         Serial.print(temperature);
         Serial.println("°C");
+        
+        // Send sensor data to web interface via WebSocket
+        // TinyML results are broadcast separately by TinyML task
+        String sensorData = "{\"page\":\"sensor\",\"temperature\":" + String(temperature, 1) + 
+                           ",\"humidity\":" + String(humidity, 1) + "}";
+        Webserver_sendata(sensorData);
         
         vTaskDelay(5000);
     }

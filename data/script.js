@@ -2,11 +2,9 @@
 var gateway = `ws://${window.location.hostname}/ws`;
 var websocket;
 
-window.addEventListener('load', onLoad);
-
-function onLoad(event) {
-    initWebSocket();
-}
+// LED States
+var led1State = false;
+var led2State = false;
 
 function onOpen(event) {
     console.log('Connection opened');
@@ -39,7 +37,86 @@ function onMessage(event) {
     console.log("📩 Nhận:", event.data);
     try {
         var data = JSON.parse(event.data);
-        // Có thể thêm xử lý riêng nếu cần (ví dụ cập nhật trạng thái)
+        
+        // Handle sensor data updates
+        if (data.page === "sensor") {
+            console.log("🌡️ Sensor data received - Temp:", data.temperature, "Humi:", data.humidity);
+            
+            // Update temperature gauge
+            if (data.temperature !== undefined) {
+                const tempValue = document.getElementById('temp-value');
+                if (tempValue) {
+                    tempValue.textContent = data.temperature.toFixed(1);
+                    console.log("✅ Temperature updated:", data.temperature.toFixed(1));
+                }
+            }
+            
+            // Update humidity gauge
+            if (data.humidity !== undefined) {
+                const humiValue = document.getElementById('humi-value');
+                if (humiValue) {
+                    humiValue.textContent = data.humidity.toFixed(1);
+                    console.log("✅ Humidity updated:", data.humidity.toFixed(1));
+                }
+            }
+        }
+        
+        // Handle TinyML inference results (separate message)
+        if (data.page === "tinyml") {
+            console.log("🤖 TinyML data received - Anomaly:", data.is_anomaly, "Score:", data.anomaly_score);
+            
+            // Update anomaly status
+            if (data.is_anomaly !== undefined) {
+                const anomalyStatus = document.getElementById('anomaly-status');
+                const anomalyScoreText = document.getElementById('anomaly-score-text');
+                const anomalyGauge = document.getElementById('anomaly-gauge');
+                const anomalyCard = document.getElementById('anomaly-card');
+                
+                if (anomalyStatus && anomalyScoreText && anomalyGauge) {
+                    const isAnomaly = data.is_anomaly;
+                    anomalyStatus.textContent = isAnomaly ? "⚠️ ANOMALY" : "✓ NORMAL";
+                    anomalyScoreText.textContent = "Score: " + (data.anomaly_score !== undefined ? data.anomaly_score.toFixed(4) : "--");
+                    
+                    // Change color based on status
+                    if (isAnomaly) {
+                        anomalyGauge.style.background = "linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)";
+                        anomalyCard.style.borderLeft = "4px solid #ff6b6b";
+                    } else {
+                        anomalyGauge.style.background = "linear-gradient(135deg, #11998e 0%, #38ef7d 100%)";
+                        anomalyCard.style.borderLeft = "4px solid #11998e";
+                    }
+                    
+                    console.log("✅ TinyML status updated:", isAnomaly ? "ANOMALY" : "NORMAL");
+                }
+            }
+            
+            // Update confidence
+            if (data.confidence !== undefined) {
+                const confidenceValue = document.getElementById('confidence-value');
+                if (confidenceValue) {
+                    confidenceValue.textContent = data.confidence.toFixed(1);
+                    console.log("✅ Confidence updated:", data.confidence.toFixed(1) + "%");
+                }
+            }
+            
+            // Update inference time
+            if (data.inference_time !== undefined) {
+                const inferenceTime = document.getElementById('inference-time');
+                if (inferenceTime) {
+                    inferenceTime.textContent = data.inference_time;
+                    console.log("✅ Inference time updated:", data.inference_time, "μs");
+                }
+            }
+        }
+        
+        // Handle device status updates
+        if (data.page === "device") {
+            if (data.device === "LED1") {
+                updateLED1UI(data.status === "ON");
+            } else if (data.device === "LED2") {
+                updateLED2UI(data.status === "ON");
+            }
+        }
     } catch (e) {
         console.warn("Không phải JSON hợp lệ:", event.data);
     }
@@ -59,96 +136,212 @@ function showSection(id, event) {
 
 
 // ==================== HOME GAUGES ====================
+// Initialize gauges after all libraries are loaded
 window.onload = function () {
-    const gaugeTemp = new JustGage({
-        id: "gauge_temp",
-        value: 26,
-        min: -10,
-        max: 50,
-        donut: true,
-        pointer: false,
-        gaugeWidthScale: 0.25,
-        gaugeColor: "transparent",
-        levelColorsGradient: true,
-        levelColors: ["#00BCD4", "#4CAF50", "#FFC107", "#F44336"]
-    });
-
-    const gaugeHumi = new JustGage({
-        id: "gauge_humi",
-        value: 60,
-        min: 0,
-        max: 100,
-        donut: true,
-        pointer: false,
-        gaugeWidthScale: 0.25,
-        gaugeColor: "transparent",
-        levelColorsGradient: true,
-        levelColors: ["#42A5F5", "#00BCD4", "#0288D1"]
-    });
-
-    setInterval(() => {
-        gaugeTemp.refresh(Math.floor(Math.random() * 15) + 20);
-        gaugeHumi.refresh(Math.floor(Math.random() * 40) + 40);
-    }, 3000);
+    console.log("🚀 Page loaded, initializing WebSocket...");
+    
+    // Initialize WebSocket
+    initWebSocket();
 };
 
 
-// ==================== DEVICE FUNCTIONS ====================
+// ==================== DEVICE CONTROL FUNCTIONS ====================
+function toggleLED1() {
+    led1State = !led1State;
+    updateLED1UI(led1State);
+    
+    const command = JSON.stringify({
+        page: "device",
+        device: "LED1",
+        gpio: 6,
+        status: led1State ? "ON" : "OFF"
+    });
+    
+    Send_Data(command);
+}
+
+function toggleLED2() {
+    led2State = !led2State;
+    updateLED2UI(led2State);
+    
+    const command = JSON.stringify({
+        page: "device",
+        device: "LED2",
+        gpio: 8,
+        status: led2State ? "ON" : "OFF"
+    });
+    
+    Send_Data(command);
+}
+
+function updateLED1UI(isOn) {
+    led1State = isOn;
+    const btn = document.getElementById('led1-btn');
+    const statusDot = document.querySelector('#led1-status .status-dot');
+    const statusText = document.querySelector('#led1-status .status-text');
+    
+    if (isOn) {
+        btn.classList.add('on');
+        btn.textContent = 'ON';
+        statusDot.classList.remove('off');
+        statusDot.classList.add('on');
+        statusText.textContent = 'Bật';
+    } else {
+        btn.classList.remove('on');
+        btn.textContent = 'OFF';
+        statusDot.classList.remove('on');
+        statusDot.classList.add('off');
+        statusText.textContent = 'Tắt';
+    }
+}
+
+function updateLED2UI(isOn) {
+    led2State = isOn;
+    const btn = document.getElementById('led2-btn');
+    const statusDot = document.querySelector('#led2-status .status-dot');
+    const statusText = document.querySelector('#led2-status .status-text');
+    
+    if (isOn) {
+        btn.classList.add('on');
+        btn.textContent = 'ON';
+        statusDot.classList.remove('off');
+        statusDot.classList.add('on');
+        statusText.textContent = 'Bật';
+    } else {
+        btn.classList.remove('on');
+        btn.textContent = 'OFF';
+        statusDot.classList.remove('on');
+        statusDot.classList.add('off');
+        statusText.textContent = 'Tắt';
+    }
+}
+
+function turnAllOn() {
+    updateLED1UI(true);
+    updateLED2UI(true);
+    
+    const command1 = JSON.stringify({
+        page: "device",
+        device: "LED1",
+        gpio: 6,
+        status: "ON"
+    });
+    
+    const command2 = JSON.stringify({
+        page: "device",
+        device: "LED2",
+        gpio: 8,
+        status: "ON"
+    });
+    
+    Send_Data(command1);
+    setTimeout(() => Send_Data(command2), 100);
+}
+
+function turnAllOff() {
+    updateLED1UI(false);
+    updateLED2UI(false);
+    
+    const command1 = JSON.stringify({
+        page: "device",
+        device: "LED1",
+        gpio: 6,
+        status: "OFF"
+    });
+    
+    const command2 = JSON.stringify({
+        page: "device",
+        device: "LED2",
+        gpio: 8,
+        status: "OFF"
+    });
+    
+    Send_Data(command1);
+    setTimeout(() => Send_Data(command2), 100);
+    
+    // Turn off all custom relays
+    relayList.forEach(relay => {
+        relay.state = false;
+    });
+    renderRelays();
+}
+
+
+// ==================== CUSTOM DEVICE FUNCTIONS ====================
 function openAddRelayDialog() {
     document.getElementById('addRelayDialog').style.display = 'flex';
 }
+
 function closeAddRelayDialog() {
     document.getElementById('addRelayDialog').style.display = 'none';
+    document.getElementById('relayName').value = '';
+    document.getElementById('relayGPIO').value = '';
 }
+
 function saveRelay() {
     const name = document.getElementById('relayName').value.trim();
     const gpio = document.getElementById('relayGPIO').value.trim();
-    if (!name || !gpio) return alert("⚠️ Please fill all fields!");
-    relayList.push({ id: Date.now(), name, gpio, state: false });
+    
+    if (!name || !gpio) {
+        alert("⚠️ Vui lòng điền đầy đủ thông tin!");
+        return;
+    }
+    
+    relayList.push({ id: Date.now(), name, gpio: parseInt(gpio), state: false });
     renderRelays();
     closeAddRelayDialog();
 }
+
 function renderRelays() {
     const container = document.getElementById('relayContainer');
     container.innerHTML = "";
+    
     relayList.forEach(r => {
         const card = document.createElement('div');
         card.className = 'device-card';
         card.innerHTML = `
-      <i class="fa-solid fa-bolt device-icon"></i>
-      <h3>${r.name}</h3>
-      <p>GPIO: ${r.gpio}</p>
-      <button class="toggle-btn ${r.state ? 'on' : ''}" onclick="toggleRelay(${r.id})">
-        ${r.state ? 'ON' : 'OFF'}
-      </button>
-      <i class="fa-solid fa-trash delete-icon" onclick="showDeleteDialog(${r.id})"></i>
-    `;
+            <i class="fa-solid fa-bolt device-icon"></i>
+            <h3>${r.name}</h3>
+            <p>GPIO: ${r.gpio}</p>
+            <button class="toggle-btn ${r.state ? 'on' : ''}" onclick="toggleRelay(${r.id})">
+                ${r.state ? 'ON' : 'OFF'}
+            </button>
+            <div class="status-indicator">
+                <span class="status-dot ${r.state ? 'on' : 'off'}"></span>
+                <span class="status-text">${r.state ? 'Bật' : 'Tắt'}</span>
+            </div>
+            <i class="fa-solid fa-trash delete-icon" onclick="showDeleteDialog(${r.id})"></i>
+        `;
         container.appendChild(card);
     });
 }
+
 function toggleRelay(id) {
     const relay = relayList.find(r => r.id === id);
     if (relay) {
         relay.state = !relay.state;
-        const relayJSON = JSON.stringify({
+        
+        const command = JSON.stringify({
             page: "device",
-            value: {
-                name: relay.name,
-                status: relay.state ? "ON" : "OFF",
-                gpio: relay.gpio
-            }
+            device: relay.name,
+            gpio: relay.gpio,
+            status: relay.state ? "ON" : "OFF"
         });
-        Send_Data(relayJSON);
+        
+        Send_Data(command);
         renderRelays();
     }
 }
+
 function showDeleteDialog(id) {
     deleteTarget = id;
     document.getElementById('confirmDeleteDialog').style.display = 'flex';
 }
+
 function closeConfirmDelete() {
     document.getElementById('confirmDeleteDialog').style.display = 'none';
 }
+
 function confirmDelete() {
     relayList = relayList.filter(r => r.id !== deleteTarget);
     renderRelays();
@@ -156,7 +349,7 @@ function confirmDelete() {
 }
 
 
-// ==================== SETTINGS FORM (BỔ SUNG) ====================
+// ==================== SETTINGS FORM ====================
 document.getElementById("settingsForm").addEventListener("submit", function (e) {
     e.preventDefault();
 

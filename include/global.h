@@ -17,4 +17,56 @@ extern String CORE_IOT_PORT;
 
 extern boolean isWifiConnected;
 extern SemaphoreHandle_t xBinarySemaphoreInternet;
+
+// ---- Sensor sample from DHT20 ----
+typedef struct {
+    float temperature;
+    float humidity;
+    unsigned long timestamp; // Timestamp in milliseconds
+} SensorSample_t;
+
+// ---- LED patterns (Task 1) ----
+typedef enum {
+    LED_PATTERN_SLOW = 0,
+    LED_PATTERN_MEDIUM,
+    LED_PATTERN_FAST
+} LedPattern_t;
+
+// ---- NeoPixel color (Task 2) ----
+typedef struct {
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+} NeoColor_t;
+
+// ---- System state for LCD (Task 3) ----
+typedef enum {
+    STATE_NORMAL = 0,
+    STATE_WARNING,
+    STATE_CRITICAL
+} SystemState_t;
+
+// ---- Telemetry data for CoreIOT (Task 6) ----
+typedef struct {
+    float temperature;
+    float humidity;
+    unsigned long timestamp;
+} TelemetryData_t;
+
+// ---- Application context (no global vars) ----
+typedef struct {
+    QueueHandle_t sensorQueue;   // sensor -> manager
+    QueueHandle_t ledQueue;      // manager -> LED
+    QueueHandle_t neoQueue;      // manager -> NeoPixel
+    QueueHandle_t tinymlQueue;   // sensor -> TinyML (Task 5)
+    QueueHandle_t telemetryQueue; // manager -> CoreIOT (Task 6)
+
+    SemaphoreHandle_t stateSemaphore; // manager -> LCD (state changes)
+    SemaphoreHandle_t dataMutex;      // protect state + last values
+
+    // Shared state for LCD
+    SystemState_t currentState;
+    float lastTemperature;
+    float lastHumidity;
+} AppContext_t;
 #endif

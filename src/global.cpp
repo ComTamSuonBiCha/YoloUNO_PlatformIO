@@ -1,4 +1,8 @@
 #include "global.h"
+
+// DEPRECATED: These global variables are kept for backward compatibility 
+// with web interface (Webserver_sendata) but should NOT be used by CoreIOT task.
+// CoreIOT now uses queue-based telemetry (TelemetryData_t via telemetryQueue)
 float glob_temperature = 0;
 float glob_humidity = 0;
 
