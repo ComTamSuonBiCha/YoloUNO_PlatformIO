@@ -12,7 +12,7 @@
 #include "task_toogle_boot.h"
 #include "task_wifi.h"
 #include "task_webserver.h"
-#include "task_core_iot.h"
+// #include "task_core_iot.h"
 #include "task_manager.h"
 #include "task_lcd.h"
 void setup()
@@ -35,6 +35,7 @@ void setup()
   appCtx.ledQueue    = xQueueCreate(5,  sizeof(LedPattern_t));
   appCtx.neoQueue    = xQueueCreate(5,  sizeof(NeoColor_t));
   appCtx.tinymlQueue = xQueueCreate(10, sizeof(SensorSample_t)); // Queue for TinyML task
+  appCtx.telemetryQueue = xQueueCreate(5, sizeof(TelemetryData_t)); // Queue for CoreIOT task
 
   // Create semaphores
   appCtx.stateSemaphore = xSemaphoreCreateBinary();
@@ -62,7 +63,7 @@ void setup()
   xTaskCreate(tiny_ml_task, "Task TinyML", 8192, (void*)&appCtx, 2, NULL);
   
   // Task 6: CoreIOT Cloud Server - Data Publishing and RPC Control
-  xTaskCreate(coreiot_task, "CoreIOT Task", 4096, NULL, 2, NULL);
+  xTaskCreate(coreiot_task, "CoreIOT Task", 4096, (void*)&appCtx, 3, NULL);
   
   Serial.println("✅ All tasks created successfully");
   // xTaskCreate(main_server_task, "Task Main Server" ,8192  ,NULL  ,2 , NULL);

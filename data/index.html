@@ -94,6 +94,36 @@
           </div>
         </div>
       </div>
+
+      <!-- TinyML Inference Results -->
+      <div style="margin-top: 40px;">
+        <h2 style="text-align: center; color: #2294F2; margin-bottom: 20px;">🤖 TinyML Anomaly Detection</h2>
+        <div class="gauges-container">
+          <div class="gauge-card" id="anomaly-card">
+            <h3>🔍 Status</h3>
+            <div class="simple-gauge" id="anomaly-gauge" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+              <span class="gauge-value" id="anomaly-status">--</span>
+            </div>
+            <p style="text-align: center; margin-top: 10px; color: #666;" id="anomaly-score-text">Score: --</p>
+          </div>
+
+          <div class="gauge-card">
+            <h3>📊 Confidence</h3>
+            <div class="simple-gauge" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+              <span class="gauge-value" id="confidence-value">--</span>
+              <span class="gauge-unit">%</span>
+            </div>
+          </div>
+
+          <div class="gauge-card">
+            <h3>⚡ Inference Time</h3>
+            <div class="simple-gauge" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);">
+              <span class="gauge-value" id="inference-time" style="color: #333;">--</span>
+              <span class="gauge-unit" style="color: #555;">μs</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- THIẾT BỊ -->

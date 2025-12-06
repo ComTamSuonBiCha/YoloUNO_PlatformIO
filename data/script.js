@@ -61,6 +61,54 @@ function onMessage(event) {
             }
         }
         
+        // Handle TinyML inference results (separate message)
+        if (data.page === "tinyml") {
+            console.log("🤖 TinyML data received - Anomaly:", data.is_anomaly, "Score:", data.anomaly_score);
+            
+            // Update anomaly status
+            if (data.is_anomaly !== undefined) {
+                const anomalyStatus = document.getElementById('anomaly-status');
+                const anomalyScoreText = document.getElementById('anomaly-score-text');
+                const anomalyGauge = document.getElementById('anomaly-gauge');
+                const anomalyCard = document.getElementById('anomaly-card');
+                
+                if (anomalyStatus && anomalyScoreText && anomalyGauge) {
+                    const isAnomaly = data.is_anomaly;
+                    anomalyStatus.textContent = isAnomaly ? "⚠️ ANOMALY" : "✓ NORMAL";
+                    anomalyScoreText.textContent = "Score: " + (data.anomaly_score !== undefined ? data.anomaly_score.toFixed(4) : "--");
+                    
+                    // Change color based on status
+                    if (isAnomaly) {
+                        anomalyGauge.style.background = "linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)";
+                        anomalyCard.style.borderLeft = "4px solid #ff6b6b";
+                    } else {
+                        anomalyGauge.style.background = "linear-gradient(135deg, #11998e 0%, #38ef7d 100%)";
+                        anomalyCard.style.borderLeft = "4px solid #11998e";
+                    }
+                    
+                    console.log("✅ TinyML status updated:", isAnomaly ? "ANOMALY" : "NORMAL");
+                }
+            }
+            
+            // Update confidence
+            if (data.confidence !== undefined) {
+                const confidenceValue = document.getElementById('confidence-value');
+                if (confidenceValue) {
+                    confidenceValue.textContent = data.confidence.toFixed(1);
+                    console.log("✅ Confidence updated:", data.confidence.toFixed(1) + "%");
+                }
+            }
+            
+            // Update inference time
+            if (data.inference_time !== undefined) {
+                const inferenceTime = document.getElementById('inference-time');
+                if (inferenceTime) {
+                    inferenceTime.textContent = data.inference_time;
+                    console.log("✅ Inference time updated:", data.inference_time, "μs");
+                }
+            }
+        }
+        
         // Handle device status updates
         if (data.page === "device") {
             if (data.device === "LED1") {

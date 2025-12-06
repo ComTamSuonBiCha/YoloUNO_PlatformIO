@@ -72,8 +72,14 @@ void manager_task(void *pvParameters) {
                 xSemaphoreGive(ctx->dataMutex);
             }
             
-            glob_temperature = t;
-            glob_humidity = h;
+            // Task 6: Send telemetry data to CoreIOT task via queue
+            if (ctx->telemetryQueue != nullptr) {
+                TelemetryData_t telemetry;
+                telemetry.temperature = t;
+                telemetry.humidity = h;
+                telemetry.timestamp = sample.timestamp;
+                xQueueSend(ctx->telemetryQueue, &telemetry, 0); // Non-blocking
+            }
 
             // Notify LCD that state/values changed
             if (ctx->stateSemaphore != nullptr) {

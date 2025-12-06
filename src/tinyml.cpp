@@ -378,9 +378,18 @@ void tiny_ml_task(void *pvParameters)
                     Serial.print(is_anomaly ? "ANOMALY" : "NORMAL");
                     Serial.print(", Confidence: ");
                     Serial.print(inference_result.confidence * 100.0f, 1);
-                    Serial.print("%, Inference Time: ");
+                    Serial.print(", Inference Time: ");
                     Serial.print(inference_result.inference_time);
                     Serial.println(" μs");
+                    
+                    // Broadcast TinyML results to web interface via WebSocket
+                    String tinymlData = "{\"page\":\"tinyml\",\"anomaly_score\":" + String(inference_result.anomaly_score, 4) + 
+                                       ",\"is_anomaly\":" + String(is_anomaly ? "true" : "false") + 
+                                       ",\"confidence\":" + String(inference_result.confidence * 100.0f, 1) + 
+                                       ",\"inference_time\":" + String(inference_result.inference_time) + 
+                                       ",\"temperature\":" + String(sensor_data.temperature, 1) + 
+                                       ",\"humidity\":" + String(sensor_data.humidity, 1) + "}";
+                    Webserver_sendata(tinymlData);
                     
                     // Data collection mode
                     // if (data_collection_enabled)

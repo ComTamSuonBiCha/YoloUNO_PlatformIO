@@ -56,8 +56,10 @@ void temp_humi_monitor(void *pvParameters){
         Serial.print(temperature);
         Serial.println("°C");
         
-        // Send data to web interface via WebSocket
-        String sensorData = "{\"page\":\"sensor\",\"temperature\":" + String(temperature, 1) + ",\"humidity\":" + String(humidity, 1) + "}";
+        // Send sensor data to web interface via WebSocket
+        // TinyML results are broadcast separately by TinyML task
+        String sensorData = "{\"page\":\"sensor\",\"temperature\":" + String(temperature, 1) + 
+                           ",\"humidity\":" + String(humidity, 1) + "}";
         Webserver_sendata(sensorData);
         
         vTaskDelay(5000);

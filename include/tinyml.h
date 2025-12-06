@@ -13,6 +13,9 @@
 #include "tensorflow/lite/micro/system_setup.h"
 #include "tensorflow/lite/schema/schema_generated.h"
 
+// WebSocket broadcast function
+extern void Webserver_sendata(String data);
+
 // Structure to hold inference results and accuracy metrics
 typedef struct {
     float anomaly_score;          // Model output (0 = normal, 1 = anomaly)

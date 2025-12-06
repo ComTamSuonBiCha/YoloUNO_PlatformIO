@@ -66,6 +66,11 @@ void callback(char* topic, byte* payload, unsigned int length) {
   if (error) {
     Serial.print("deserializeJson() failed: ");
     Serial.println(error.c_str());
+    
+    // Send error response back to CoreIOT
+    String responseTopic = "v1/devices/me/rpc/response/" + requestId;
+    String response = "{\"success\":false,\"error\":\"Invalid JSON\"}";
+    client.publish(responseTopic.c_str(), response.c_str());
     return;
   }
 
@@ -78,6 +83,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   // Handle different RPC methods
   if (strcmp(method, "setLED1") == 0) {
+    // Control LED1 (GPIO 1)
     // Handle both boolean and string parameters
     bool ledState = false;
     
@@ -219,10 +225,13 @@ void setup_coreiot(){
 }
 
 void coreiot_task(void *pvParameters){
+    AppContext_t *ctx = (AppContext_t *) pvParameters;
+    
     setup_coreiot();
 
     unsigned long lastTelemetryTime = 0;
     const unsigned long TELEMETRY_INTERVAL = 10000; // 10 seconds
+    TelemetryData_t latestTelemetry = {0.0f, 0.0f, 0}; // Cache latest telemetry data
 
     while(1){
         // Check if CoreIOT configuration is available before attempting connection
@@ -241,23 +250,38 @@ void coreiot_task(void *pvParameters){
         // This must be called often to receive RPC messages in real-time
         client.loop();
 
+        // Receive telemetry data from manager task (non-blocking)
+        TelemetryData_t telemetry;
+        if (ctx->telemetryQueue != nullptr && 
+            xQueueReceive(ctx->telemetryQueue, &telemetry, 0) == pdTRUE) {
+            // Update cached telemetry with latest data
+            latestTelemetry = telemetry;
+        }
+
         // Publish telemetry every 10 seconds (not every loop iteration)
         unsigned long currentTime = millis();
         if (currentTime - lastTelemetryTime >= TELEMETRY_INTERVAL) {
-            // Publish sensor data (temperature & humidity) to CoreIOT telemetry
-            // Format: {"temperature": 25.5, "humidity": 60.2}
-            String payload = "{\"temperature\":" + String(glob_temperature) +  ",\"humidity\":" + String(glob_humidity) + "}";
-            
-            if (client.publish("v1/devices/me/telemetry", payload.c_str())) {
-                Serial.println("Published telemetry: " + payload);
+            // Only publish if we have valid data (timestamp > 0)
+            if (latestTelemetry.timestamp > 0) {
+                // Publish sensor data (temperature & humidity) to CoreIOT telemetry
+                // Format: {"temperature": 25.5, "humidity": 60.2}
+                String payload = "{\"temperature\":" + String(latestTelemetry.temperature, 1) + 
+                                ",\"humidity\":" + String(latestTelemetry.humidity, 1) + "}";
+                
+                if (client.publish("v1/devices/me/telemetry", payload.c_str())) {
+                    Serial.println("📤 Published telemetry: " + payload);
+                } else {
+                    Serial.println("❌ Failed to publish telemetry");
+                }
             } else {
-                Serial.println("Failed to publish telemetry");
+                Serial.println("⏳ Waiting for sensor data before publishing...");
             }
             
             lastTelemetryTime = currentTime;
         }
 
         // Small delay to prevent CPU spinning, but keep loop() called frequently
-        vTaskDelay(100 / portTICK_PERIOD_MS); // 100ms delay - allows responsive RPC handling
+        // 10ms delay for responsive RPC handling
+        vTaskDelay(10 / portTICK_PERIOD_MS);
     }
 }

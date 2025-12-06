@@ -46,12 +46,20 @@ typedef enum {
     STATE_CRITICAL
 } SystemState_t;
 
+// ---- Telemetry data for CoreIOT (Task 6) ----
+typedef struct {
+    float temperature;
+    float humidity;
+    unsigned long timestamp;
+} TelemetryData_t;
+
 // ---- Application context (no global vars) ----
 typedef struct {
     QueueHandle_t sensorQueue;   // sensor -> manager
     QueueHandle_t ledQueue;      // manager -> LED
     QueueHandle_t neoQueue;      // manager -> NeoPixel
     QueueHandle_t tinymlQueue;   // sensor -> TinyML (Task 5)
+    QueueHandle_t telemetryQueue; // manager -> CoreIOT (Task 6)
 
     SemaphoreHandle_t stateSemaphore; // manager -> LCD (state changes)
     SemaphoreHandle_t dataMutex;      // protect state + last values
